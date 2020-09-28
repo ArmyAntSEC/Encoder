@@ -60,19 +60,23 @@
 typedef struct {
 	volatile IO_REG_TYPE * pin1_register;
 	volatile IO_REG_TYPE * pin2_register;
+	volatile IO_REG_TYPE * homing_pin_register;
 	IO_REG_TYPE            pin1_bitmask;
 	IO_REG_TYPE            pin2_bitmask;
+	IO_REG_TYPE            homing_pin_bitmask;
 	uint8_t                state;
 	int32_t                position;
+	boolean 			   homed;
 } Encoder_internal_state_t;
 
 class Encoder
 {
 public:
-	Encoder(uint8_t pin1, uint8_t pin2) {
+	Encoder(uint8_t pin1, uint8_t pin2, uint8_t homing) {
 		#ifdef INPUT_PULLUP
 		pinMode(pin1, INPUT_PULLUP);
 		pinMode(pin2, INPUT_PULLUP);
+		pinMode(homing, INPUT);
 		#else
 		pinMode(pin1, INPUT);
 		digitalWrite(pin1, HIGH);
@@ -83,7 +87,11 @@ public:
 		encoder.pin1_bitmask = PIN_TO_BITMASK(pin1);
 		encoder.pin2_register = PIN_TO_BASEREG(pin2);
 		encoder.pin2_bitmask = PIN_TO_BITMASK(pin2);
+		encoder.homing_pin_register = PIN_TO_BASEREG(homing);
+		encoder.homing_pin_bitmask = PIN_TO_BITMASK(homing);
+		
 		encoder.position = 0;
+		encoder.homed = false;
 		// allow time for a passive R-C filter to charge
 		// through the pullup resistors, before reading
 		// the initial state
@@ -95,6 +103,7 @@ public:
 #ifdef ENCODER_USE_INTERRUPTS
 		interrupts_in_use = attach_interrupt(pin1, &encoder);
 		interrupts_in_use += attach_interrupt(pin2, &encoder);
+		interrupts_in_use += attach_interrupt_homing(homing, &encoder);
 #endif
 		//update_finishup();  // to force linker to include the code (does not work)
 	}
@@ -115,7 +124,7 @@ public:
 	inline int32_t readAndReset() {
 		if (interrupts_in_use < 2) {
 			noInterrupts();
-			update(&encoder);
+			update(&encoder, false);
 		} else {
 			noInterrupts();
 		}
@@ -311,6 +320,12 @@ public:
 		}
 #endif
 	}
+
+	static void home(Encoder_internal_state_t *arg) {
+		arg->position = 0;
+		arg->homed = true;
+	}	
+
 private:
 /*
 #if defined(__AVR__)
@@ -376,7 +391,7 @@ private:
 	// this giant function is an unfortunate consequence of Arduino's
 	// attachInterrupt function not supporting any way to pass a pointer
 	// or other context to the attached function.
-	static uint8_t attach_interrupt(uint8_t pin, Encoder_internal_state_t *state) {
+	static uint8_t attach_interrupt(uint8_t pin, Encoder_internal_state_t *state ) {
 		switch (pin) {
 		#ifdef CORE_INT0_PIN
 			case CORE_INT0_PIN:
@@ -744,105 +759,339 @@ private:
 		}
 		return 1;
 	}
+
+		static uint8_t attach_interrupt_homing(uint8_t pin, Encoder_internal_state_t *state ) {
+		switch (pin) {
+		#ifdef CORE_INT0_PIN
+			case CORE_INT0_PIN:
+				interruptArgs[0] = state;
+				attachInterrupt(0, isr0_home, FALLING);
+				break;
+		#endif
+		#ifdef CORE_INT1_PIN
+			case CORE_INT1_PIN:
+				interruptArgs[1] = state;
+				attachInterrupt(1, isr1_home, FALLING);
+				break;
+		#endif
+		#ifdef CORE_INT2_PIN
+			case CORE_INT2_PIN:
+				interruptArgs[2] = state;
+				attachInterrupt(2, isr2_home, FALLING);
+				break;
+		#endif
+		#ifdef CORE_INT3_PIN
+			case CORE_INT3_PIN:
+				interruptArgs[3] = state;
+				attachInterrupt(3, isr3_home, FALLING);
+				break;
+		#endif
+		#ifdef CORE_INT4_PIN
+			case CORE_INT4_PIN:
+				interruptArgs[4] = state;
+				attachInterrupt(4, isr4_home, FALLING);
+				break;
+		#endif
+		#ifdef CORE_INT5_PIN
+			case CORE_INT5_PIN:
+				interruptArgs[5] = state;
+				attachInterrupt(5, isr5_home, FALLING;
+				break;
+		#endif
+		#ifdef CORE_INT6_PIN
+			case CORE_INT6_PIN:
+				interruptArgs[6] = state;
+				attachInterrupt(6, isr6_home, FALLING);
+				break;
+		#endif
+		#ifdef CORE_INT7_PIN
+			case CORE_INT7_PIN:
+				interruptArgs[7] = state;
+				attachInterrupt(7, isr7_home, FALLING);
+				break;
+		#endif
+		#ifdef CORE_INT8_PIN
+			case CORE_INT8_PIN:
+				interruptArgs[8] = state;
+				attachInterrupt(8, isr8_home, FALLING);
+				break;
+		#endif
+		#ifdef CORE_INT9_PIN
+			case CORE_INT9_PIN:
+				interruptArgs[9] = state;
+				attachInterrupt(9, isr9_home, FALLING);
+				break;
+		#endif
+		#ifdef CORE_INT10_PIN
+			case CORE_INT10_PIN:
+				interruptArgs[10] = state;
+				attachInterrupt(10, isr10_home, FALLING);
+				break;
+		#endif
+		#ifdef CORE_INT11_PIN
+			case CORE_INT11_PIN:
+				interruptArgs[11] = state;
+				attachInterrupt(11, isr11_home, FALLING);
+				break;
+		#endif
+		#ifdef CORE_INT12_PIN
+			case CORE_INT12_PIN:
+				interruptArgs[12] = state;
+				attachInterrupt(12, isr12_home, FALLING);
+				break;
+		#endif
+		#ifdef CORE_INT13_PIN
+			case CORE_INT13_PIN:
+				interruptArgs[13] = state;
+				attachInterrupt(13, isr13_home, FALLING);
+				break;
+		#endif
+		#ifdef CORE_INT14_PIN
+			case CORE_INT14_PIN:
+				interruptArgs[14] = state;
+				attachInterrupt(14, isr14_home, FALLING);
+				break;
+		#endif
+		#ifdef CORE_INT15_PIN
+			case CORE_INT15_PIN:
+				interruptArgs[15] = state;
+				attachInterrupt(15, isr15_home, FALLING);
+				break;
+		#endif
+		#ifdef CORE_INT16_PIN
+			case CORE_INT16_PIN:
+				interruptArgs[16] = state;
+				attachInterrupt(16, isr16_home, FALLING);
+				break;
+		#endif
+		#ifdef CORE_INT17_PIN
+			case CORE_INT17_PIN:
+				interruptArgs[17] = state;
+				attachInterrupt(17, isr17_home, FALLING);
+				break;
+		#endif
+		#ifdef CORE_INT18_PIN
+			case CORE_INT18_PIN:
+				interruptArgs[18] = state;
+				attachInterrupt(18, isr18_home, FALLING);
+				break;
+		#endif
+		#ifdef CORE_INT19_PIN
+			case CORE_INT19_PIN:
+				interruptArgs[19] = state;
+				attachInterrupt(19, isr19_home, FALLING);
+				break;
+		#endif
+		#ifdef CORE_INT20_PIN
+			case CORE_INT20_PIN:
+				interruptArgs[20] = state;
+				attachInterrupt(20, isr20_home, FALLING);
+				break;
+		#endif
+		#ifdef CORE_INT21_PIN
+			case CORE_INT21_PIN:
+				interruptArgs[21] = state;
+				attachInterrupt(21, isr21_home, FALLING);
+				break;
+		#endif
+		#ifdef CORE_INT22_PIN
+			case CORE_INT22_PIN:
+				interruptArgs[22] = state;
+				attachInterrupt(22, isr22_home, FALLING);
+				break;
+		#endif
+		#ifdef CORE_INT23_PIN
+			case CORE_INT23_PIN:
+				interruptArgs[23] = state;
+				attachInterrupt(23, isr23_home, FALLING);
+				break;
+		#endif
+		#ifdef CORE_INT24_PIN
+			case CORE_INT24_PIN:
+				interruptArgs[24] = state;
+				attachInterrupt(24, isr24_home, FALLING);
+				break;
+		#endif
+		#ifdef CORE_INT25_PIN
+			case CORE_INT25_PIN:
+				interruptArgs[25] = state;
+				attachInterrupt(25, isr25_home, FALLING);
+				break;
+		#endif
+		#ifdef CORE_INT26_PIN
+			case CORE_INT26_PIN:
+				interruptArgs[26] = state;
+				attachInterrupt(26, isr26_home, FALLING);
+				break;
+		#endif
+		#ifdef CORE_INT27_PIN
+			case CORE_INT27_PIN:
+				interruptArgs[27] = state;
+				attachInterrupt(27, isr27_home, FALLING);
+				break;
+		#endif
+		#ifdef CORE_INT28_PIN
+			case CORE_INT28_PIN:
+				interruptArgs[28] = state;
+				attachInterrupt(28, isr28_home, FALLING);
+				break;
+		#endif
+		#ifdef CORE_INT29_PIN
+			case CORE_INT29_PIN:
+				interruptArgs[29] = state;
+				attachInterrupt(29, isr29_home, FALLING;
+				break;
+		#endif
+
+		#ifdef CORE_INT30_PIN
+			case CORE_INT30_PIN:
+				interruptArgs[30] = state;
+				attachInterrupt(30, isr30_home, FALLING);
+				break;
+		#endif
+		#ifdef CORE_INT31_PIN
+			case CORE_INT31_PIN:
+				interruptArgs[31] = state;
+				attachInterrupt(31, isr31_home, FALLING);
+				break;
+		#endif
+			default:
+				return 0;
+		}
+		return 1;
+	}
+
 #endif // ENCODER_USE_INTERRUPTS
 
 
 #if defined(ENCODER_USE_INTERRUPTS) && !defined(ENCODER_OPTIMIZE_INTERRUPTS)
 	#ifdef CORE_INT0_PIN
 	static void isr0(void) { update(interruptArgs[0]); }
+	static void isr0_home(void) { home(interruptArgs[0]); }
 	#endif
 	#ifdef CORE_INT1_PIN
 	static void isr1(void) { update(interruptArgs[1]); }
+	static void isr1_home(void) { home(interruptArgs[1]); }
 	#endif
 	#ifdef CORE_INT2_PIN
 	static void isr2(void) { update(interruptArgs[2]); }
+	static void isr2_home(void) { home(interruptArgs[2]); }
 	#endif
 	#ifdef CORE_INT3_PIN
 	static void isr3(void) { update(interruptArgs[3]); }
+	static void isr3_home(void) { home(interruptArgs[3]); }
 	#endif
 	#ifdef CORE_INT4_PIN
 	static void isr4(void) { update(interruptArgs[4]); }
+	static void isr4_home(void) { home(interruptArgs[4]); }
 	#endif
 	#ifdef CORE_INT5_PIN
 	static void isr5(void) { update(interruptArgs[5]); }
+	static void isr5_home(void) { home(interruptArgs[5]); }
 	#endif
 	#ifdef CORE_INT6_PIN
 	static void isr6(void) { update(interruptArgs[6]); }
+	static void isr6_home(void) { home(interruptArgs[6]); }
 	#endif
 	#ifdef CORE_INT7_PIN
 	static void isr7(void) { update(interruptArgs[7]); }
+	static void isr7_home(void) { home(interruptArgs[7]); }
 	#endif
 	#ifdef CORE_INT8_PIN
 	static void isr8(void) { update(interruptArgs[8]); }
+	static void isr8_home(void) { home(interruptArgs[8]); }
 	#endif
 	#ifdef CORE_INT9_PIN
 	static void isr9(void) { update(interruptArgs[9]); }
+	static void isr9_home(void) { home(interruptArgs[9]); }
 	#endif
 	#ifdef CORE_INT10_PIN
 	static void isr10(void) { update(interruptArgs[10]); }
+	static void isr10_home(void) { home(interruptArgs[10]); }
 	#endif
 	#ifdef CORE_INT11_PIN
 	static void isr11(void) { update(interruptArgs[11]); }
+	static void isr11_home(void) { home(interruptArgs[11]); }
 	#endif
 	#ifdef CORE_INT12_PIN
 	static void isr12(void) { update(interruptArgs[12]); }
+	static void isr12_home(void) { home(interruptArgs[12]); }
 	#endif
 	#ifdef CORE_INT13_PIN
 	static void isr13(void) { update(interruptArgs[13]); }
+	static void isr13_home(void) { home(interruptArgs[13]); }
 	#endif
 	#ifdef CORE_INT14_PIN
 	static void isr14(void) { update(interruptArgs[14]); }
+	static void isr14_home(void) { home(interruptArgs[14]); }
 	#endif
 	#ifdef CORE_INT15_PIN
 	static void isr15(void) { update(interruptArgs[15]); }
+	static void isr15_home(void) { home(interruptArgs[15]); }
 	#endif
 	#ifdef CORE_INT16_PIN
 	static void isr16(void) { update(interruptArgs[16]); }
+	static void isr16_home(void) { home(interruptArgs[16]); }
 	#endif
 	#ifdef CORE_INT17_PIN
 	static void isr17(void) { update(interruptArgs[17]); }
+	static void isr17_home(void) { home(interruptArgs[17]); }
 	#endif
 	#ifdef CORE_INT18_PIN
 	static void isr18(void) { update(interruptArgs[18]); }
+	static void isr18_home(void) { home(interruptArgs[18]); }
 	#endif
 	#ifdef CORE_INT19_PIN
 	static void isr19(void) { update(interruptArgs[19]); }
+	static void isr19_home(void) { home(interruptArgs[19]); }
 	#endif
 	#ifdef CORE_INT20_PIN
 	static void isr20(void) { update(interruptArgs[20]); }
+	static void isr20_home(void) { home(interruptArgs[20]); }
 	#endif
 	#ifdef CORE_INT21_PIN
 	static void isr21(void) { update(interruptArgs[21]); }
+	static void isr21_home(void) { home(interruptArgs[21]); }
 	#endif
 	#ifdef CORE_INT22_PIN
 	static void isr22(void) { update(interruptArgs[22]); }
+	static void isr22_home(void) { home(interruptArgs[22]); }
 	#endif
 	#ifdef CORE_INT23_PIN
 	static void isr23(void) { update(interruptArgs[23]); }
+	static void isr23_home(void) { home(interruptArgs[23]); }
 	#endif
 	#ifdef CORE_INT24_PIN
 	static void isr24(void) { update(interruptArgs[24]); }
+	static void isr24_home(void) { home(interruptArgs[24]); }
 	#endif
 	#ifdef CORE_INT25_PIN
 	static void isr25(void) { update(interruptArgs[25]); }
+	static void isr25_home(void) { home(interruptArgs[25]); }
 	#endif
 	#ifdef CORE_INT26_PIN
 	static void isr26(void) { update(interruptArgs[26]); }
+	static void isr26_home(void) { home(interruptArgs[26]); }
 	#endif
 	#ifdef CORE_INT27_PIN
 	static void isr27(void) { update(interruptArgs[27]); }
+	static void isr27_home(void) { home(interruptArgs[27]); }
 	#endif
 	#ifdef CORE_INT28_PIN
 	static void isr28(void) { update(interruptArgs[28]); }
+	static void isr28_home(void) { home(interruptArgs[28]); }
 	#endif
 	#ifdef CORE_INT29_PIN
 	static void isr29(void) { update(interruptArgs[29]); }
+	static void isr29_home(void) { home(interruptArgs[29]); }
 	#endif
 	#ifdef CORE_INT30_PIN
 	static void isr30(void) { update(interruptArgs[30]); }
+	static void isr30_home(void) { home(interruptArgs[30]); }
 	#endif
 	#ifdef CORE_INT31_PIN
 	static void isr31(void) { update(interruptArgs[31]); }
+	static void isr31_home(void) { home(interruptArgs[32]); }
 	#endif
 	#ifdef CORE_INT32_PIN
 	static void isr32(void) { update(interruptArgs[32]); }
