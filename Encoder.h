@@ -124,7 +124,7 @@ public:
 	inline int32_t readAndReset() {
 		if (interrupts_in_use < 2) {
 			noInterrupts();
-			update(&encoder, false);
+			update(&encoder);
 		} else {
 			noInterrupts();
 		}
@@ -138,6 +138,14 @@ public:
 		encoder.position = p;
 		interrupts();
 	}
+	
+	inline boolean isHomed() {
+		noInterrupts();
+		boolean homed = encoder.homed;
+		interrupts();
+		return homed;
+	}
+	
 #else
 	inline int32_t read() {
 		update(&encoder);
@@ -795,7 +803,7 @@ private:
 		#ifdef CORE_INT5_PIN
 			case CORE_INT5_PIN:
 				interruptArgs[5] = state;
-				attachInterrupt(5, isr5_home, FALLING;
+				attachInterrupt(5, isr5_home, FALLING);
 				break;
 		#endif
 		#ifdef CORE_INT6_PIN
@@ -939,7 +947,7 @@ private:
 		#ifdef CORE_INT29_PIN
 			case CORE_INT29_PIN:
 				interruptArgs[29] = state;
-				attachInterrupt(29, isr29_home, FALLING;
+				attachInterrupt(29, isr29_home, FALLING);
 				break;
 		#endif
 
